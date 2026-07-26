@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
@@ -10,6 +10,12 @@ function OutcomeListPage() {
     const location = useLocation();
 
     const [items, setItems] = useState([]);
+    const [lokasiList, setLokasiList] = useState([]);
+    const [search, setSearch] = useState("");
+    const [year, setYear] = useState("");
+    const [klasifikasi, setKlasifikasi] = useState("");
+    const [lokasiid, setLokasiid] = useState("");
+    const [hasSearched, setHasSearched] = useState(false);
     const [alert, setAlert] = useState({
         message: "",
         type: "success",
@@ -17,22 +23,61 @@ function OutcomeListPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const fetchData = async () => {
+    const itemsPerPage = 5;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const klasifikasiOptions = [
+        "BENSIN",
+        "KONSUMSI",
+        "PERALATAN",
+        "PERLENGKAPAN",
+        "PENGINAPAN",
+        "LAINNYA",
+    ];
+
+    const fetchLokasi = async () => {
         try {
-            const res = await api.get("/outcome");
+            const res = await api.get("/outcome/lokasi");
+            setLokasiList(Array.isArray(res.data.data) ? res.data.data : []);
+        } catch (error) {
+            setAlert({
+                message: error.response?.data?.message || "Gagal mengambil data lokasi",
+                type: "error",
+            });
+        }
+    };
+
+    const fetchData = async (customParams = {}) => {
+        try {
+            setLoading(true);
+
+            const params = {
+                search: customParams.search !== undefined ? customParams.search : search,
+                year: customParams.year !== undefined ? customParams.year : year,
+                klasifikasi:
+                    customParams.klasifikasi !== undefined
+                        ? customParams.klasifikasi
+                        : klasifikasi,
+                lokasiid: customParams.lokasiid !== undefined ? customParams.lokasiid : lokasiid,
+            };
+
+            Object.keys(params).forEach((key) => {
+                if (!params[key]) delete params[key];
+            });
+
+            const res = await api.get("/outcome", { params });
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-
-            const sorted = [...data].sort(
-                (a, b) => new Date(a.tanggal_perjalanan) - new Date(b.tanggal_perjalanan)
-            );
-
-            setItems(sorted);
+            setItems(data);
         } catch (error) {
             if (error.response?.status === 401) {
                 localStorage.removeItem("token");
                 navigate("/", {
-                    state: { message: "Token tidak valid atau kadaluwarsa", type: "error" },
+                    state: {
+                        message: "Token tidak valid atau kadaluwarsa",
+                        type: "error",
+                    },
                 });
                 return;
             }
@@ -41,10 +86,13 @@ function OutcomeListPage() {
                 message: error.response?.data?.message || "Gagal mengambil data pengeluaran",
                 type: "error",
             });
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
+        fetchLokasi();
         fetchData();
 
         if (location.state?.message) {
@@ -55,6 +103,23 @@ function OutcomeListPage() {
             window.history.replaceState({}, document.title);
         }
     }, []);
+
+    const handleSearchSubmit = async (e) => {
+        e.preventDefault();
+        setHasSearched(true);
+        setCurrentPage(1);
+        await fetchData();
+    };
+
+    const handleReset = async () => {
+        setSearch("");
+        setYear("");
+        setKlasifikasi("");
+        setLokasiid("");
+        setHasSearched(false);
+        setCurrentPage(1);
+        await fetchData({ search: "", year: "", klasifikasi: "", lokasiid: "" });
+    };
 
     const openDeleteDialog = (id) => {
         setSelectedId(id);
@@ -81,7 +146,7 @@ function OutcomeListPage() {
 
             setDialogOpen(false);
             setSelectedId(null);
-            fetchData();
+            await fetchData();
         } catch (error) {
             setAlert({
                 message: error.response?.data?.message || "Gagal menghapus data pengeluaran",
@@ -90,6 +155,61 @@ function OutcomeListPage() {
         } finally {
             setDeleteLoading(false);
         }
+    };
+
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedItems = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return items.slice(startIndex, startIndex + itemsPerPage);
+    }, [items, currentPage]);
+
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
+
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+
+        return (
+            <div className="pagination">
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                        key={page}
+                        type="button"
+                        className={page === currentPage ? "pagination-btn active" : "pagination-btn"}
+                        onClick={() => goToPage(page)}
+                    >
+                        {page}
+                    </button>
+                ))}
+
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -107,25 +227,64 @@ function OutcomeListPage() {
                 onClose={() => setAlert({ message: "", type: "success" })}
             />
 
+            <div className="card filter-card">
+                <form onSubmit={handleSearchSubmit} className="filter-form filter-form-outcome">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari deskripsi, lokasi, klasifikasi, atau nominal"
+                    />
+                    <input
+                        type="number"
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                        placeholder="Filter tahun, misalnya 2025"
+                    />
+                    <select value={klasifikasi} onChange={(e) => setKlasifikasi(e.target.value)}>
+                        <option value="">Semua klasifikasi</option>
+                        {klasifikasiOptions.map((item) => (
+                            <option key={item} value={item}>
+                                {item}
+                            </option>
+                        ))}
+                    </select>
+                    <select value={lokasiid} onChange={(e) => setLokasiid(e.target.value)}>
+                        <option value="">Semua lokasi</option>
+                        {lokasiList.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.nama_daerah} ({item.tipe_daerah})
+                            </option>
+                        ))}
+                    </select>
+                    <button type="submit">Cari</button>
+                    <button type="button" className="btn-secondary" onClick={handleReset}>
+                        Reset
+                    </button>
+                </form>
+            </div>
+
+            {loading ? <div className="card loading-card">Memuat data...</div> : null}
+
             <div className="card table-card desktop-only">
                 <div className="table-wrapper">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>No</th>
                                 <th>Tanggal Perjalanan</th>
                                 <th>Klasifikasi</th>
                                 <th>Deskripsi</th>
-                                <th>Biaya Pengeluaran</th>
+                                <th>Biaya Pengeluaran (Rp)</th>
                                 <th>Lokasi</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {items.length > 0 ? (
-                                items.map((item) => (
+                            {paginatedItems.length > 0 ? (
+                                paginatedItems.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{item.id}</td>
+                                        <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                                         <td>{formatTanggalIndonesia(item.tanggal_perjalanan)}</td>
                                         <td>{item.klasifikasi_kode}</td>
                                         <td>{item.deskripsi}</td>
@@ -150,7 +309,7 @@ function OutcomeListPage() {
                             ) : (
                                 <tr>
                                     <td colSpan="7" className="empty-cell">
-                                        Belum ada data pengeluaran
+                                        {hasSearched ? "Data yang disortir tidak ditemukan" : "Belum ada data pengeluaran"}
                                     </td>
                                 </tr>
                             )}
@@ -160,12 +319,12 @@ function OutcomeListPage() {
             </div>
 
             <div className="mobile-list mobile-only">
-                {items.length > 0 ? (
-                    items.map((item) => (
+                {paginatedItems.length > 0 ? (
+                    paginatedItems.map((item, index) => (
                         <div key={item.id} className="mobile-item-card">
                             <div className="mobile-item-row">
-                                <span className="mobile-label">ID</span>
-                                <span className="mobile-value">{item.id}</span>
+                                <span className="mobile-label">No</span>
+                                <span className="mobile-value">{(currentPage - 1) * itemsPerPage + index + 1}</span>
                             </div>
                             <div className="mobile-item-row">
                                 <span className="mobile-label">Tanggal</span>
@@ -189,7 +348,6 @@ function OutcomeListPage() {
                                 <span className="mobile-label">Lokasi</span>
                                 <span className="mobile-value">{item.lokasi}</span>
                             </div>
-
                             <div className="mobile-action-group">
                                 <Link to={`/outcome/edit/${item.id}`} className="btn-warning-link full-width-btn">
                                     Edit
@@ -205,9 +363,13 @@ function OutcomeListPage() {
                         </div>
                     ))
                 ) : (
-                    <div className="card empty-mobile-card">Belum ada data pengeluaran</div>
+                    <div className="card empty-mobile-card">
+                        {hasSearched ? "Data yang disortir tidak ditemukan" : "Belum ada data pengeluaran"}
+                    </div>
                 )}
             </div>
+
+            {renderPagination()}
 
             <ConfirmDialog
                 open={dialogOpen}

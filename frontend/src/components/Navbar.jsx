@@ -24,6 +24,7 @@ function Navbar() {
                     </>
                 ) : (
                     <>
+                        <Link to="/dashboard">Dashboard</Link>
                         <Link to="/income">Pemasukan</Link>
                         <Link to="/outcome">Pengeluaran</Link>
                         <button type="button" onClick={handleLogout}>

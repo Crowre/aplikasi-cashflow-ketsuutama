@@ -9,7 +9,7 @@ import { successResponse } from "../utils/responseHelper.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 export const indexPemasukan = catchAsync(async (req, res) => {
-    const data = await findAllPemasukan();
+    const data = await findAllPemasukan(req.query);
     return successResponse(res, data, "Data pemasukan berhasil diambil");
 });
 

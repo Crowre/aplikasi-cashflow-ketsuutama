@@ -11,7 +11,7 @@ import { successResponse } from "../utils/responseHelper.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 export const indexPengeluaran = catchAsync(async (req, res) => {
-    const data = await findAllPengeluaran();
+    const data = await findAllPengeluaran(req.query);
     return successResponse(res, data, "Data pengeluaran berhasil diambil");
 });
 
@@ -46,9 +46,5 @@ export const indexLokasiSumbar = catchAsync(async (req, res) => {
 
 export const showLokasiSumbar = catchAsync(async (req, res) => {
     const data = await findLokasiSumbarById(req.params.id);
-    return successResponse(
-        res,
-        data,
-        "Detail lokasi kabupaten/kota berhasil diambil"
-    );
+    return successResponse(res, data, "Detail lokasi kabupaten/kota berhasil diambil");
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
@@ -10,6 +10,8 @@ function IncomeListPage() {
     const location = useLocation();
 
     const [items, setItems] = useState([]);
+    const [search, setSearch] = useState("");
+    const [year, setYear] = useState("");
     const [alert, setAlert] = useState({
         message: "",
         type: "success",
@@ -17,17 +19,27 @@ function IncomeListPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
-    const fetchData = async () => {
+    const fetchData = async (customParams = {}) => {
         try {
-            const res = await api.get("/income");
+            setLoading(true);
+
+            const params = {
+                search: customParams.search !== undefined ? customParams.search : search,
+                year: customParams.year !== undefined ? customParams.year : year,
+            };
+
+            Object.keys(params).forEach((key) => {
+                if (!params[key]) delete params[key];
+            });
+
+            const res = await api.get("/income", { params });
             const data = Array.isArray(res.data.data) ? res.data.data : [];
-
-            const sorted = [...data].sort(
-                (a, b) => new Date(a.tanggal_proyek) - new Date(b.tanggal_proyek)
-            );
-
-            setItems(sorted);
+            setItems(data);
         } catch (error) {
             if (error.response?.status === 401) {
                 localStorage.removeItem("token");
@@ -41,6 +53,8 @@ function IncomeListPage() {
                 message: error.response?.data?.message || "Gagal mengambil data pemasukan",
                 type: "error",
             });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -55,6 +69,21 @@ function IncomeListPage() {
             window.history.replaceState({}, document.title);
         }
     }, []);
+
+    const handleSearchSubmit = async (e) => {
+        e.preventDefault();
+        setHasSearched(true);
+        setCurrentPage(1);
+        await fetchData();
+    };
+
+    const handleReset = async () => {
+        setSearch("");
+        setYear("");
+        setHasSearched(false);
+        setCurrentPage(1);
+        await fetchData({ search: "", year: "" });
+    };
 
     const openDeleteDialog = (id) => {
         setSelectedId(id);
@@ -81,7 +110,7 @@ function IncomeListPage() {
 
             setDialogOpen(false);
             setSelectedId(null);
-            fetchData();
+            await fetchData();
         } catch (error) {
             setAlert({
                 message: error.response?.data?.message || "Gagal menghapus data pemasukan",
@@ -90,6 +119,61 @@ function IncomeListPage() {
         } finally {
             setDeleteLoading(false);
         }
+    };
+
+    const totalPages = Math.ceil(items.length / itemsPerPage);
+
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedItems = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return items.slice(startIndex, startIndex + itemsPerPage);
+    }, [items, currentPage]);
+
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
+
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+
+        return (
+            <div className="pagination">
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                        key={page}
+                        type="button"
+                        className={page === currentPage ? "pagination-btn active" : "pagination-btn"}
+                        onClick={() => goToPage(page)}
+                    >
+                        {page}
+                    </button>
+                ))}
+
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -107,23 +191,46 @@ function IncomeListPage() {
                 onClose={() => setAlert({ message: "", type: "success" })}
             />
 
+            <div className="card filter-card">
+                <form onSubmit={handleSearchSubmit} className="filter-form">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nama proyek atau nominal"
+                    />
+                    <input
+                        type="number"
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                        placeholder="Filter tahun, misalnya 2025"
+                    />
+                    <button type="submit">Cari</button>
+                    <button type="button" className="btn-secondary" onClick={handleReset}>
+                        Reset
+                    </button>
+                </form>
+            </div>
+
+            {loading ? <div className="card loading-card">Memuat data...</div> : null}
+
             <div className="card table-card desktop-only">
                 <div className="table-wrapper">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>No</th>
                                 <th>Tanggal Proyek</th>
                                 <th>Nama Proyek</th>
-                                <th>Jumlah Pemasukan</th>
+                                <th>Jumlah Pemasukan (Rp)</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {items.length > 0 ? (
-                                items.map((item) => (
+                            {paginatedItems.length > 0 ? (
+                                paginatedItems.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{item.id}</td>
+                                        <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                                         <td>{formatTanggalIndonesia(item.tanggal_proyek)}</td>
                                         <td>{item.nama_proyek}</td>
                                         <td>{Number(item.jumlah_pemasukan).toLocaleString("id-ID")}</td>
@@ -146,7 +253,7 @@ function IncomeListPage() {
                             ) : (
                                 <tr>
                                     <td colSpan="5" className="empty-cell">
-                                        Belum ada data pemasukan
+                                        {hasSearched ? "Data yang disortir tidak ditemukan" : "Belum ada data pemasukan"}
                                     </td>
                                 </tr>
                             )}
@@ -156,12 +263,12 @@ function IncomeListPage() {
             </div>
 
             <div className="mobile-list mobile-only">
-                {items.length > 0 ? (
-                    items.map((item) => (
+                {paginatedItems.length > 0 ? (
+                    paginatedItems.map((item, index) => (
                         <div key={item.id} className="mobile-item-card">
                             <div className="mobile-item-row">
-                                <span className="mobile-label">ID</span>
-                                <span className="mobile-value">{item.id}</span>
+                                <span className="mobile-label">No</span>
+                                <span className="mobile-value">{(currentPage - 1) * itemsPerPage + index + 1}</span>
                             </div>
                             <div className="mobile-item-row">
                                 <span className="mobile-label">Tanggal Proyek</span>
@@ -177,7 +284,6 @@ function IncomeListPage() {
                                     {Number(item.jumlah_pemasukan).toLocaleString("id-ID")}
                                 </span>
                             </div>
-
                             <div className="mobile-action-group">
                                 <Link to={`/income/edit/${item.id}`} className="btn-warning-link full-width-btn">
                                     Edit
@@ -193,9 +299,13 @@ function IncomeListPage() {
                         </div>
                     ))
                 ) : (
-                    <div className="card empty-mobile-card">Belum ada data pemasukan</div>
+                    <div className="card empty-mobile-card">
+                        {hasSearched ? "Data yang disortir tidak ditemukan" : "Belum ada data pemasukan"}
+                    </div>
                 )}
             </div>
+
+            {renderPagination()}
 
             <ConfirmDialog
                 open={dialogOpen}

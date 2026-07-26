@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
+import { isAuthenticated } from "../utils/auth";
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -18,6 +19,11 @@ function LoginPage() {
     });
 
     useEffect(() => {
+        if (isAuthenticated()) {
+            navigate("/dashboard", { replace: true });
+            return;
+        }
+
         if (location.state?.message) {
             setAlert({
                 message: location.state.message,
@@ -25,7 +31,7 @@ function LoginPage() {
             });
             window.history.replaceState({}, document.title);
         }
-    }, [location.state]);
+    }, [location.state, navigate]);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,7 +52,7 @@ function LoginPage() {
             const res = await api.post("/auth/login", form);
             localStorage.setItem("token", res.data.data.token);
 
-            navigate("/income", {
+            navigate("/dashboard", {
                 state: {
                     message: res.data.message || "Login berhasil",
                     type: "success",

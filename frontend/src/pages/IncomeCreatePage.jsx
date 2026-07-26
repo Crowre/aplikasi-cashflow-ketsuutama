@@ -33,7 +33,13 @@ function IncomeCreatePage() {
         }
 
         try {
-            const res = await api.post("/income", form);
+            const payload = {
+                tanggal_proyek: form.tanggal_proyek,
+                nama_proyek: form.nama_proyek,
+                jumlah_pemasukan: Number(form.jumlah_pemasukan),
+            };
+
+            const res = await api.post("/income", payload);
 
             navigate("/income", {
                 state: {

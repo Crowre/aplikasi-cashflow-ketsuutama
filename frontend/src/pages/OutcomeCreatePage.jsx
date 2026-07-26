@@ -5,8 +5,9 @@ import AlertBox from "../components/AlertBox";
 
 function OutcomeCreatePage() {
     const navigate = useNavigate();
-
     const [lokasiList, setLokasiList] = useState([]);
+    const klasifikasiOptions = ["BENSIN", "KONSUMSI", "PERALATAN", "PENGINAPAN", "PERLENGKAPAN", "LAINNYA"];
+
     const [form, setForm] = useState({
         tanggal_perjalanan: "",
         klasifikasi_kode: "",
@@ -45,7 +46,6 @@ function OutcomeCreatePage() {
 
         try {
             const res = await api.post("/outcome", form);
-
             navigate("/outcome", {
                 state: {
                     message: res.data.message || "Data pengeluaran berhasil ditambahkan",
@@ -84,13 +84,18 @@ function OutcomeCreatePage() {
 
                     <label>
                         Klasifikasi Kode
-                        <input
-                            type="text"
+                        <select
                             name="klasifikasi_kode"
                             value={form.klasifikasi_kode}
                             onChange={handleChange}
-                            placeholder="Contoh: BBM"
-                        />
+                        >
+                            <option value="">Pilih klasifikasi</option>
+                            {klasifikasiOptions.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
+                            ))}
+                        </select>
                     </label>
 
                     <label>
@@ -121,7 +126,7 @@ function OutcomeCreatePage() {
                             <option value="">Pilih lokasi</option>
                             {lokasiList.map((item) => (
                                 <option key={item.id} value={item.id}>
-                                    {item.nama_daerah} ({item.tipe_daerah})
+                                    {item.nama_daerah}
                                 </option>
                             ))}
                         </select>
@@ -129,11 +134,7 @@ function OutcomeCreatePage() {
 
                     <div className="form-actions">
                         <button type="submit">Simpan</button>
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => navigate("/outcome")}
-                        >
+                        <button type="button" className="btn-secondary" onClick={() => navigate("/outcome")}>
                             Batal
                         </button>
                     </div>

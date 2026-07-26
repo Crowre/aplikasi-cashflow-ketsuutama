@@ -23,6 +23,15 @@ function OutcomeEditPage() {
         type: "success",
     });
 
+    const klasifikasiOptions = [
+        "BENSIN",
+        "KONSUMSI",
+        "PERALATAN",
+        "PERLENGKAPAN",
+        "PENGINAPAN",
+        "LAINNYA",
+    ];
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -39,8 +48,8 @@ function OutcomeEditPage() {
                     tanggal_perjalanan: data?.tanggal_perjalanan?.slice(0, 10) || "",
                     klasifikasi_kode: data?.klasifikasi_kode || "",
                     deskripsi: data?.deskripsi || "",
-                    biaya_pengeluaran: data?.biaya_pengeluaran || "",
-                    lokasi_id: data?.lokasi_id || "",
+                    biaya_pengeluaran: data?.biaya_pengeluaran ?? "",
+                    lokasi_id: data?.lokasi_id ? String(data.lokasi_id) : "",
                 });
             } catch (error) {
                 setAlert({
@@ -59,6 +68,20 @@ function OutcomeEditPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (
+            !form.tanggal_perjalanan ||
+            !form.klasifikasi_kode ||
+            !form.deskripsi ||
+            form.biaya_pengeluaran === "" ||
+            !form.lokasi_id
+        ) {
+            setAlert({
+                message: "Semua field wajib diisi",
+                type: "error",
+            });
+            return;
+        }
 
         try {
             const res = await api.put(`/outcome/${id}`, form);
@@ -91,11 +114,23 @@ function OutcomeEditPage() {
                 {originalData && (
                     <div className="preview-box">
                         <h4>Data Lama</h4>
-                        <p><strong>Tanggal Perjalanan:</strong> {formatTanggalIndonesia(originalData.tanggal_perjalanan)}</p>
-                        <p><strong>Klasifikasi:</strong> {originalData.klasifikasi_kode}</p>
-                        <p><strong>Deskripsi:</strong> {originalData.deskripsi}</p>
-                        <p><strong>Biaya:</strong> {Number(originalData.biaya_pengeluaran).toLocaleString("id-ID")}</p>
-                        <p><strong>Lokasi:</strong> {originalData.lokasi}</p>
+                        <p>
+                            <strong>Tanggal Perjalanan:</strong>{" "}
+                            {formatTanggalIndonesia(originalData.tanggal_perjalanan)}
+                        </p>
+                        <p>
+                            <strong>Klasifikasi:</strong> {originalData.klasifikasi_kode}
+                        </p>
+                        <p>
+                            <strong>Deskripsi:</strong> {originalData.deskripsi}
+                        </p>
+                        <p>
+                            <strong>Biaya:</strong>{" "}
+                            {Number(originalData.biaya_pengeluaran).toLocaleString("id-ID")}
+                        </p>
+                        <p>
+                            <strong>Lokasi:</strong> {originalData.lokasi}
+                        </p>
                     </div>
                 )}
 
@@ -112,12 +147,18 @@ function OutcomeEditPage() {
 
                     <label>
                         Klasifikasi Kode
-                        <input
-                            type="text"
+                        <select
                             name="klasifikasi_kode"
                             value={form.klasifikasi_kode}
                             onChange={handleChange}
-                        />
+                        >
+                            <option value="">Pilih klasifikasi</option>
+                            {klasifikasiOptions.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
+                            ))}
+                        </select>
                     </label>
 
                     <label>
@@ -127,6 +168,7 @@ function OutcomeEditPage() {
                             name="deskripsi"
                             value={form.deskripsi}
                             onChange={handleChange}
+                            placeholder="Masukkan deskripsi"
                         />
                     </label>
 
@@ -137,6 +179,7 @@ function OutcomeEditPage() {
                             name="biaya_pengeluaran"
                             value={form.biaya_pengeluaran}
                             onChange={handleChange}
+                            placeholder="Masukkan biaya pengeluaran"
                         />
                     </label>
 
@@ -145,7 +188,7 @@ function OutcomeEditPage() {
                         <select name="lokasi_id" value={form.lokasi_id} onChange={handleChange}>
                             <option value="">Pilih lokasi</option>
                             {lokasiList.map((item) => (
-                                <option key={item.id} value={item.id}>
+                                <option key={item.id} value={String(item.id)}>
                                     {item.nama_daerah} ({item.tipe_daerah})
                                 </option>
                             ))}
