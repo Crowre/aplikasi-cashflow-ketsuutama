@@ -123,7 +123,7 @@ function DashboardPage() {
         });
 
         outcomeItems.forEach((item) => {
-            const date = new Date(item.tanggal_perjalanan);
+            const date = new Date(item.tanggal_pengeluaran);
             if (!Number.isNaN(date.getTime())) {
                 result[date.getMonth()].outcome += Number(item.biaya_pengeluaran || 0);
             }
@@ -160,7 +160,7 @@ function DashboardPage() {
             type: "Pengeluaran",
             description: item.deskripsi,
             amount: Number(item.biaya_pengeluaran || 0),
-            date: item.tanggal_perjalanan,
+            date: item.tanggal_pengeluaran,
         }));
 
         return [...income, ...outcome]

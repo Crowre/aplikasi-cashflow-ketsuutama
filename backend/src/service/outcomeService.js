@@ -15,17 +15,17 @@ const normalizeString = (value) => {
 };
 
 const validatePengeluaranPayload = async ({
-    tanggal_perjalanan,
+    tanggal_pengeluaran,
     klasifikasi_kode,
     deskripsi,
     biaya_pengeluaran,
     lokasi_id,
 }) => {
-    const cleanTanggal = normalizeString(tanggal_perjalanan);
+    const cleanTanggal = normalizeString(tanggal_pengeluaran);
     const cleanKlasifikasi = normalizeString(klasifikasi_kode).toUpperCase();
     const cleanDeskripsi = normalizeString(deskripsi);
 
-    if (!cleanTanggal) throw new AppError("Tanggal perjalanan wajib diisi", 400, 102);
+    if (!cleanTanggal) throw new AppError("Tanggal pengeluaran wajib diisi", 400, 102);
     if (!cleanKlasifikasi) throw new AppError("Klasifikasi kode wajib diisi", 400, 102);
     if (!cleanDeskripsi) throw new AppError("Deskripsi wajib diisi", 400, 102);
 
@@ -56,7 +56,7 @@ const validatePengeluaranPayload = async ({
     }
 
     return {
-        tanggal_perjalanan: cleanTanggal,
+        tanggal_pengeluaran: cleanTanggal,
         klasifikasi_kode: cleanKlasifikasi,
         deskripsi: cleanDeskripsi,
         biaya_pengeluaran: nominal,

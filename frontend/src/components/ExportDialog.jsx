@@ -11,7 +11,7 @@ export default function ExportDialog({ kind, items, onClose }) {
     const [error, setError] = useState("");
     const income = kind === "income";
     const label = income ? "pemasukan" : "pengeluaran";
-    const dateField = income ? "tanggal_proyek" : "tanggal_perjalanan";
+    const dateField = income ? "tanggal_proyek" : "tanggal_pengeluaran";
     const amountField = income ? "jumlah_pemasukan" : "biaya_pengeluaran";
     const exportData = async () => {
         setBusy(true);

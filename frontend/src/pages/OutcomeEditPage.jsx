@@ -31,7 +31,7 @@ function OutcomeEditPage() {
     const navigate = useNavigate();
     const [lokasiList, setLokasiList] = useState([]);
     const [form, setForm] = useState({
-        tanggal_perjalanan: "",
+        tanggal_pengeluaran: "",
         klasifikasi_kode: "",
         deskripsi: "",
         biaya_pengeluaran: "",
@@ -52,7 +52,7 @@ function OutcomeEditPage() {
                 const data = detailRes.data.data;
                 setLokasiList(Array.isArray(lokasiRes.data.data) ? lokasiRes.data.data : []);
                 setForm({
-                    tanggal_perjalanan: data?.tanggal_perjalanan?.slice(0, 10) || "",
+                    tanggal_pengeluaran: data?.tanggal_pengeluaran?.slice(0, 10) || "",
                     klasifikasi_kode: data?.klasifikasi_kode || "",
                     deskripsi: data?.deskripsi || "",
                     biaya_pengeluaran: data?.biaya_pengeluaran ?? "",
@@ -79,7 +79,7 @@ function OutcomeEditPage() {
         e.preventDefault();
 
         if (
-            !form.tanggal_perjalanan ||
+            !form.tanggal_pengeluaran ||
             !form.klasifikasi_kode ||
             !form.deskripsi ||
             form.biaya_pengeluaran === "" ||
@@ -143,9 +143,9 @@ function OutcomeEditPage() {
                                 <DateField
                                     fullWidth
                                     type="date"
-                                    name="tanggal_perjalanan"
-                                    label="Tanggal Perjalanan"
-                                    value={form.tanggal_perjalanan}
+                                    name="tanggal_pengeluaran"
+                                    label="Tanggal Pengeluaran"
+                                    value={form.tanggal_pengeluaran}
                                     onChange={handleChange}
                                     slotProps={{ inputLabel: { shrink: true } }}
                                 />

@@ -112,7 +112,7 @@ function OutcomeListPage() {
             });
 
             const res = await api.get("/outcome", { params });
-            setItems(filterByMonthRange(Array.isArray(res.data.data) ? res.data.data : [], "tanggal_perjalanan", rangeStart, rangeEnd));
+            setItems(filterByMonthRange(Array.isArray(res.data.data) ? res.data.data : [], "tanggal_pengeluaran", rangeStart, rangeEnd));
             setPage(0);
         } catch (error) {
             if (error.response?.status === 401) {
@@ -350,7 +350,7 @@ function OutcomeListPage() {
                                         paginatedItems.map((item, index) => (
                                             <TableRow key={item.id} hover>
                                                 <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                                                <TableCell>{formatTanggalIndonesia(item.tanggal_perjalanan)}</TableCell>
+                                                <TableCell>{formatTanggalIndonesia(item.tanggal_pengeluaran)}</TableCell>
                                                 <TableCell>
                                                     <Chip
                                                         size="small"

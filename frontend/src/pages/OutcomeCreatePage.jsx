@@ -29,7 +29,7 @@ function OutcomeCreatePage() {
     const navigate = useNavigate();
     const [lokasiList, setLokasiList] = useState([]);
     const [form, setForm] = useState({
-        tanggal_perjalanan: "",
+        tanggal_pengeluaran: "",
         klasifikasi_kode: "",
         deskripsi: "",
         biaya_pengeluaran: "",
@@ -62,7 +62,7 @@ function OutcomeCreatePage() {
         e.preventDefault();
 
         if (
-            !form.tanggal_perjalanan ||
+            !form.tanggal_pengeluaran ||
             !form.klasifikasi_kode ||
             !form.deskripsi ||
             form.biaya_pengeluaran === "" ||
@@ -123,9 +123,9 @@ function OutcomeCreatePage() {
                             <DateField
                                 fullWidth
                                 type="date"
-                                name="tanggal_perjalanan"
-                                label="Tanggal Perjalanan"
-                                value={form.tanggal_perjalanan}
+                                name="tanggal_pengeluaran"
+                                label="Tanggal Pengeluaran"
+                                value={form.tanggal_pengeluaran}
                                 onChange={handleChange}
                                 slotProps={{ inputLabel: { shrink: true } }}
                             />
@@ -161,9 +161,11 @@ function OutcomeCreatePage() {
                                 label="Biaya Pengeluaran"
                                 value={form.biaya_pengeluaran}
                                 onChange={handleChange}
-                                slotProps={{ input: {
-                                    startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
-                                } }}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
+                                    }
+                                }}
                             />
 
                             <TextField

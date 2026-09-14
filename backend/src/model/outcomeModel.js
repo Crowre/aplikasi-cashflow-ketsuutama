@@ -9,7 +9,7 @@ export const getAllPengeluaran = async ({
     let query = `
     SELECT
       p.id,
-      p.tanggal_perjalanan,
+      p.tanggal_pengeluaran,
       p.klasifikasi_kode,
       p.deskripsi,
       p.biaya_pengeluaran,
@@ -40,7 +40,7 @@ export const getAllPengeluaran = async ({
     }
 
     if (year) {
-        query += ` AND EXTRACT(YEAR FROM p.tanggal_perjalanan) = $${paramIndex}`;
+        query += ` AND EXTRACT(YEAR FROM p.tanggal_pengeluaran) = $${paramIndex}`;
         values.push(year);
         paramIndex++;
     }
@@ -68,7 +68,7 @@ export const getPengeluaranById = async (id) => {
         `
       SELECT
         p.id,
-        p.tanggal_perjalanan,
+        p.tanggal_pengeluaran,
         p.klasifikasi_kode,
         p.deskripsi,
         p.biaya_pengeluaran,
@@ -88,7 +88,7 @@ export const getPengeluaranById = async (id) => {
 };
 
 export const createPengeluaran = async ({
-    tanggal_perjalanan,
+    tanggal_pengeluaran,
     klasifikasi_kode,
     deskripsi,
     biaya_pengeluaran,
@@ -96,11 +96,11 @@ export const createPengeluaran = async ({
 }) => {
     const result = await db.query(
         `
-      INSERT INTO pengeluaran (tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id)
+      INSERT INTO pengeluaran (tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, created_at, updated_at
+      RETURNING id, tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, created_at, updated_at
     `,
-        [tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id]
+        [tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id]
     );
 
     return result.rows[0];
@@ -108,21 +108,21 @@ export const createPengeluaran = async ({
 
 export const updatePengeluaran = async (
     id,
-    { tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id }
+    { tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id }
 ) => {
     const result = await db.query(
         `
       UPDATE pengeluaran
-      SET tanggal_perjalanan = $1,
+      SET tanggal_pengeluaran = $1,
           klasifikasi_kode = $2,
           deskripsi = $3,
           biaya_pengeluaran = $4,
           lokasi_id = $5,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = $6
-      RETURNING id, tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, created_at, updated_at
+      RETURNING id, tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, created_at, updated_at
     `,
-        [tanggal_perjalanan, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, id]
+        [tanggal_pengeluaran, klasifikasi_kode, deskripsi, biaya_pengeluaran, lokasi_id, id]
     );
 
     return result.rows[0] || null;
