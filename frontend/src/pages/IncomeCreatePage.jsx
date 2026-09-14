@@ -1,3 +1,4 @@
+import DateField from "../components/DateField";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -90,14 +91,14 @@ function IncomeCreatePage() {
                         />
 
                         <Stack component="form" onSubmit={handleSubmit} className="mui-form-stack">
-                            <TextField
+                            <DateField
                                 fullWidth
                                 type="date"
                                 name="tanggal_proyek"
                                 label="Tanggal Proyek"
                                 value={form.tanggal_proyek}
                                 onChange={handleChange}
-                                InputLabelProps={{ shrink: true }}
+                                slotProps={{ inputLabel: { shrink: true } }}
                             />
 
                             <TextField

@@ -963,3 +963,52 @@ select {
     width: 100%;
   }
 }
+
+.income-filter-row,
+.outcome-filter-row {
+  flex-wrap: wrap;
+}
+
+.filter-month-field {
+  min-width: 180px !important;
+  flex: 1 1 180px;
+}
+
+/* Shared transaction filters: consistent tracks and separate action row. */
+.filter-row.income-filter-row,
+.filter-row.outcome-filter-row {
+  display: grid !important;
+  grid-template-columns: minmax(240px, 2fr) minmax(130px, 1fr) repeat(2, minmax(180px, 1fr));
+  align-items: start;
+  gap: 12px !important;
+}
+.filter-row.income-filter-row > *,
+.filter-row.outcome-filter-row > * {
+  min-width: 0 !important;
+  width: 100%;
+  grid-column: auto;
+}
+.filter-row .filter-select-classification,
+.filter-row .filter-select-location { grid-row: 2; }
+.filter-row .filter-month-field { grid-row: 1; }
+.filter-row .filter-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.filter-actions .MuiButton-root { min-width: 108px; height: 48px; white-space: nowrap; }
+.filter-month-field input { cursor: pointer; }
+@media (max-width: 1199px) {
+  .filter-row.income-filter-row,
+  .filter-row.outcome-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filter-row .filter-month-field,
+  .filter-row .filter-select-classification,
+  .filter-row .filter-select-location { grid-row: auto; }
+}
+@media (max-width: 599px) {
+  .filter-row.income-filter-row,
+  .filter-row.outcome-filter-row { grid-template-columns: minmax(0, 1fr); }
+  .filter-row .filter-actions { flex-wrap: wrap; }
+  .filter-actions .MuiButton-root { flex: 1 1 90px; min-width: 0; }
+}

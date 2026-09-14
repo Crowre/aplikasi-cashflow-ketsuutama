@@ -21,10 +21,13 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import MonthField from "../components/MonthField";
+import ExportDialog from "../components/ExportDialog";
 import AppIcon from "../components/AppIcon";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { filterByMonthRange } from "../utils/filterByMonthRange";
 import { formatTanggalIndonesia } from "../utils/formatDate";
 
 const formatCurrency = (value) =>
@@ -43,9 +46,12 @@ function IncomeListPage() {
         return Array.from({ length: 8 }, (_, index) => currentYear - 5 + index);
     }, []);
 
+    const [exportOpen, setExportOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [search, setSearch] = useState("");
     const [year, setYear] = useState("");
+    const [startMonth, setStartMonth] = useState("");
+    const [endMonth, setEndMonth] = useState("");
     const [alert, setAlert] = useState({ message: "", type: "success" });
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
@@ -56,12 +62,18 @@ function IncomeListPage() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const fetchData = async (customParams = {}) => {
+        const rangeStart = customParams.startMonth ?? startMonth;
+        const rangeEnd = customParams.endMonth ?? endMonth;
+        if ((rangeStart && !rangeEnd) || (!rangeStart && rangeEnd) || rangeStart > rangeEnd) {
+            setAlert({ message: "Pilih bulan awal dan akhir dengan urutan yang valid.", type: "error" });
+            return;
+        }
         try {
             setLoading(true);
 
             const params = {
                 search: customParams.search !== undefined ? customParams.search : search,
-                year: customParams.year !== undefined ? customParams.year : year,
+                year: rangeStart ? "" : (customParams.year !== undefined ? customParams.year : year),
             };
 
             Object.keys(params).forEach((key) => {
@@ -69,7 +81,7 @@ function IncomeListPage() {
             });
 
             const res = await api.get("/income", { params });
-            setItems(Array.isArray(res.data.data) ? res.data.data : []);
+            setItems(filterByMonthRange(Array.isArray(res.data.data) ? res.data.data : [], "tanggal_proyek", rangeStart, rangeEnd));
             setPage(0);
         } catch (error) {
             if (error.response?.status === 401) {
@@ -104,9 +116,11 @@ function IncomeListPage() {
     const handleReset = async () => {
         setSearch("");
         setYear("");
+        setStartMonth("");
+        setEndMonth("");
         setHasSearched(false);
         setPage(0);
-        await fetchData({ search: "", year: "" });
+        await fetchData({ search: "", year: "", startMonth: "", endMonth: "" });
     };
 
     const handleDelete = async () => {
@@ -131,6 +145,8 @@ function IncomeListPage() {
             setDeleteLoading(false);
         }
     };
+
+    const total = useMemo(() => items.reduce((sum, item) => sum + Number(item.jumlah_pemasukan || 0), 0), [items]);
 
     const paginatedItems = useMemo(() => {
         const startIndex = page * rowsPerPage;
@@ -195,7 +211,7 @@ function IncomeListPage() {
                             select
                             label="Tahun"
                             value={year}
-                            onChange={(e) => setYear(e.target.value)}
+                            onChange={(e) => { setYear(e.target.value); setStartMonth(""); setEndMonth(""); }}
                             className="filter-select-year"
                         >
                             <MenuItem value="">Semua tahun</MenuItem>
@@ -206,13 +222,27 @@ function IncomeListPage() {
                             ))}
                         </TextField>
 
-                        <Button type="submit" variant="contained" startIcon={<AppIcon name="search" />}>
+                        <MonthField type="month" label="Bulan awal" value={startMonth}
+                            onChange={(e) => { setStartMonth(e.target.value); setYear(""); }}
+                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: endMonth || undefined } }}
+                            className="filter-month-field" />
+                        <MonthField type="month" label="Bulan akhir" value={endMonth}
+                            onChange={(e) => { setEndMonth(e.target.value); setYear(""); }}
+                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: startMonth || undefined } }}
+                            className="filter-month-field" />
+                        <Box className="filter-actions">
+                        <Button disabled={loading} type="submit" variant="contained" startIcon={<AppIcon name="search" />}>
                             Cari
                         </Button>
-                        <Button variant="outlined" onClick={handleReset} startIcon={<AppIcon name="refresh" />}>
+                        <Button disabled={loading} variant="outlined" onClick={handleReset} startIcon={<AppIcon name="refresh" />}>
                             Reset
                         </Button>
+                        <Button variant="outlined" disabled={loading} onClick={() => setExportOpen(true)}>Ekspor</Button>
+                        </Box>
                     </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                        Pilih tahun atau rentang bulan, lalu klik Cari. Rentang mencakup seluruh bulan awal dan akhir.
+                    </Typography>
                 </CardContent>
             </Card>
 
@@ -224,6 +254,13 @@ function IncomeListPage() {
                     </Box>
                 ) : (
                     <>
+                        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }} aria-live="polite">
+                            <Typography color="text.secondary">Total Pemasukan</Typography>
+                            <Typography variant="h5" className="income-money-cell">{formatCurrency(total)}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {items.length} transaksi dari seluruh hasil yang ditampilkan, termasuk semua halaman tabel.
+                            </Typography>
+                        </Box>
                         <TableContainer>
                             <Table>
                                 <TableHead>
@@ -303,6 +340,8 @@ function IncomeListPage() {
                     </>
                 )}
             </Card>
+
+            {exportOpen && <ExportDialog kind="income" items={items} onClose={() => setExportOpen(false)} />}
 
             <ConfirmDialog
                 open={dialogOpen}

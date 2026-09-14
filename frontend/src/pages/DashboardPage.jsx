@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     Box,
-    Button,
     Card,
     CardContent,
     Chip,
@@ -194,7 +193,12 @@ function DashboardPage() {
                         select
                         label="Tahun"
                         value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
+                        disabled={loading}
+                        onChange={(e) => {
+                            const year = e.target.value;
+                            setSelectedYear(year);
+                            fetchDashboardData(year);
+                        }}
                         className="year-select"
                     >
                         {[currentYear - 2, currentYear - 1, currentYear, currentYear + 1].map((year) => (
@@ -204,9 +208,6 @@ function DashboardPage() {
                         ))}
                     </TextField>
 
-                    <Button variant="outlined" onClick={() => fetchDashboardData(selectedYear)}>
-                        Tampilkan
-                    </Button>
                 </Stack>
             </Box>
 

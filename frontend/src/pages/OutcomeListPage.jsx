@@ -22,10 +22,13 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import MonthField from "../components/MonthField";
+import ExportDialog from "../components/ExportDialog";
 import AppIcon from "../components/AppIcon";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { filterByMonthRange } from "../utils/filterByMonthRange";
 import { formatTanggalIndonesia } from "../utils/formatDate";
 
 const classificationOptions = [
@@ -53,10 +56,13 @@ function OutcomeListPage() {
         return Array.from({ length: 8 }, (_, index) => currentYear - 5 + index);
     }, []);
 
+    const [exportOpen, setExportOpen] = useState(false);
     const [items, setItems] = useState([]);
     const [lokasiList, setLokasiList] = useState([]);
     const [search, setSearch] = useState("");
     const [year, setYear] = useState("");
+    const [startMonth, setStartMonth] = useState("");
+    const [endMonth, setEndMonth] = useState("");
     const [klasifikasi, setKlasifikasi] = useState("");
     const [lokasiid, setLokasiid] = useState("");
     const [hasSearched, setHasSearched] = useState(false);
@@ -81,12 +87,18 @@ function OutcomeListPage() {
     };
 
     const fetchData = async (customParams = {}) => {
+        const rangeStart = customParams.startMonth ?? startMonth;
+        const rangeEnd = customParams.endMonth ?? endMonth;
+        if ((rangeStart && !rangeEnd) || (!rangeStart && rangeEnd) || rangeStart > rangeEnd) {
+            setAlert({ message: "Pilih bulan awal dan akhir dengan urutan yang valid.", type: "error" });
+            return;
+        }
         try {
             setLoading(true);
 
             const params = {
                 search: customParams.search !== undefined ? customParams.search : search,
-                year: customParams.year !== undefined ? customParams.year : year,
+                year: rangeStart ? "" : (customParams.year !== undefined ? customParams.year : year),
                 klasifikasi:
                     customParams.klasifikasi !== undefined
                         ? customParams.klasifikasi
@@ -100,7 +112,7 @@ function OutcomeListPage() {
             });
 
             const res = await api.get("/outcome", { params });
-            setItems(Array.isArray(res.data.data) ? res.data.data : []);
+            setItems(filterByMonthRange(Array.isArray(res.data.data) ? res.data.data : [], "tanggal_perjalanan", rangeStart, rangeEnd));
             setPage(0);
         } catch (error) {
             if (error.response?.status === 401) {
@@ -136,6 +148,8 @@ function OutcomeListPage() {
     const handleReset = async () => {
         setSearch("");
         setYear("");
+        setStartMonth("");
+        setEndMonth("");
         setKlasifikasi("");
         setLokasiid("");
         setHasSearched(false);
@@ -143,6 +157,8 @@ function OutcomeListPage() {
         await fetchData({
             search: "",
             year: "",
+            startMonth: "",
+            endMonth: "",
             klasifikasi: "",
             lokasiid: "",
         });
@@ -170,6 +186,8 @@ function OutcomeListPage() {
             setDeleteLoading(false);
         }
     };
+
+    const total = useMemo(() => items.reduce((sum, item) => sum + Number(item.biaya_pengeluaran || 0), 0), [items]);
 
     const paginatedItems = useMemo(() => {
         const startIndex = page * rowsPerPage;
@@ -234,7 +252,7 @@ function OutcomeListPage() {
                             select
                             label="Tahun"
                             value={year}
-                            onChange={(e) => setYear(e.target.value)}
+                            onChange={(e) => { setYear(e.target.value); setStartMonth(""); setEndMonth(""); }}
                             className="filter-select-year"
                         >
                             <MenuItem value="">Semua</MenuItem>
@@ -275,13 +293,27 @@ function OutcomeListPage() {
                             ))}
                         </TextField>
 
-                        <Button type="submit" variant="contained" startIcon={<AppIcon name="search" />}>
+                        <MonthField type="month" label="Bulan awal" value={startMonth}
+                            onChange={(e) => { setStartMonth(e.target.value); setYear(""); }}
+                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: endMonth || undefined } }}
+                            className="filter-month-field" />
+                        <MonthField type="month" label="Bulan akhir" value={endMonth}
+                            onChange={(e) => { setEndMonth(e.target.value); setYear(""); }}
+                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: startMonth || undefined } }}
+                            className="filter-month-field" />
+                        <Box className="filter-actions">
+                        <Button disabled={loading} type="submit" variant="contained" startIcon={<AppIcon name="search" />}>
                             Cari
                         </Button>
-                        <Button variant="outlined" onClick={handleReset} startIcon={<AppIcon name="refresh" />}>
+                        <Button disabled={loading} variant="outlined" onClick={handleReset} startIcon={<AppIcon name="refresh" />}>
                             Reset
                         </Button>
+                        <Button variant="outlined" disabled={loading} onClick={() => setExportOpen(true)}>Ekspor</Button>
+                        </Box>
                     </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                        Pilih tahun atau rentang bulan, lalu klik Cari. Rentang mencakup seluruh bulan awal dan akhir.
+                    </Typography>
                 </CardContent>
             </Card>
 
@@ -293,6 +325,13 @@ function OutcomeListPage() {
                     </Box>
                 ) : (
                     <>
+                        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }} aria-live="polite">
+                            <Typography color="text.secondary">Total Pengeluaran</Typography>
+                            <Typography variant="h5" className="outcome-money-cell">{formatCurrency(total)}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {items.length} transaksi dari seluruh hasil yang ditampilkan, termasuk semua halaman tabel.
+                            </Typography>
+                        </Box>
                         <TableContainer>
                             <Table>
                                 <TableHead>
@@ -384,6 +423,8 @@ function OutcomeListPage() {
                     </>
                 )}
             </Card>
+
+            {exportOpen && <ExportDialog kind="outcome" items={items} onClose={() => setExportOpen(false)} />}
 
             <ConfirmDialog
                 open={dialogOpen}
