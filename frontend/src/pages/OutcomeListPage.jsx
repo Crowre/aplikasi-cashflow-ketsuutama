@@ -239,13 +239,13 @@ function OutcomeListPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="filter-search-field"
-                            InputProps={{
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <AppIcon name="search" />
                                     </InputAdornment>
                                 ),
-                            }}
+                            } }}
                         />
 
                         <TextField

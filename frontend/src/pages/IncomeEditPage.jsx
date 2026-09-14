@@ -139,9 +139,9 @@ function IncomeEditPage() {
                                     label="Jumlah Pemasukan"
                                     value={form.jumlah_pemasukan}
                                     onChange={handleChange}
-                                    InputProps={{
+                                    slotProps={{ input: {
                                         startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
-                                    }}
+                                    } }}
                                 />
 
                                 <Box className="form-action-row">

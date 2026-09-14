@@ -180,9 +180,9 @@ function OutcomeEditPage() {
                                     label="Biaya Pengeluaran"
                                     value={form.biaya_pengeluaran}
                                     onChange={handleChange}
-                                    InputProps={{
+                                    slotProps={{ input: {
                                         startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
-                                    }}
+                                    } }}
                                 />
 
                                 <TextField

@@ -9,7 +9,7 @@ export const registerUser = async ({
     first_name,
     last_name,
 }) => {
-    const existingUser = await findUserByUsername(username);
+    const existingUser = await findUserByUsername(String(username).trim());
 
     if (existingUser) {
         throw new AppError("Username sudah terdaftar", 409, 101);
@@ -28,7 +28,7 @@ export const registerUser = async ({
 };
 
 export const loginUser = async ({ username, password }) => {
-    const user = await findUserByUsername(username);
+    const user = await findUserByUsername(String(username).trim());
 
     if (!user) {
         throw new AppError("Username yang dimasukkan tidak terdaftar", 401, 108);

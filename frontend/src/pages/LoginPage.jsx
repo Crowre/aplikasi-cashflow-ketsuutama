@@ -92,13 +92,13 @@ function LoginPage() {
                             label="Username"
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
-                            InputProps={{
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <AppIcon name="user" />
                                     </InputAdornment>
                                 ),
-                            }}
+                            } }}
                         />
 
                         <TextField
@@ -108,7 +108,7 @@ function LoginPage() {
                             type={showPassword ? "text" : "password"}
                             value={form.password}
                             onChange={(e) => setForm({ ...form, password: e.target.value })}
-                            InputProps={{
+                            slotProps={{ input: {
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <AppIcon name="lock" />
@@ -125,7 +125,7 @@ function LoginPage() {
                                         </IconButton>
                                     </InputAdornment>
                                 ),
-                            }}
+                            } }}
                         />
 
                         <Button

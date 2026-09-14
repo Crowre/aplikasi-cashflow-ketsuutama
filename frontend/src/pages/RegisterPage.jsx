@@ -120,7 +120,7 @@ function RegisterPage() {
                             value={form.password}
                             onChange={handleChange}
                             helperText="Minimal 6 karakter"
-                            InputProps={{
+                            slotProps={{ input: {
                                 endAdornment: (
                                     <InputAdornment position="end">
                                         <IconButton
@@ -132,7 +132,7 @@ function RegisterPage() {
                                         </IconButton>
                                     </InputAdornment>
                                 ),
-                            }}
+                            } }}
                         />
 
                         <Button
