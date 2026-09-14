@@ -1,42 +1,195 @@
+// import { useEffect, useState } from "react";
+// import { useNavigate, useParams } from "react-router-dom";
+// import api from "../services/api";
+// import AlertBox from "../components/AlertBox";
+// import { formatTanggalIndonesia } from "../utils/formatDate";
+
+// function IncomeEditPage() {
+//     const { id } = useParams();
+//     const navigate = useNavigate();
+
+//     const [originalData, setOriginalData] = useState(null);
+//     const [form, setForm] = useState({
+//         tanggal_proyek: "",
+//         nama_proyek: "",
+//         jumlah_pemasukan: "",
+//     });
+
+//     const [alert, setAlert] = useState({
+//         message: "",
+//         type: "success",
+//     });
+
+//     useEffect(() => {
+//         const fetchDetail = async () => {
+//             try {
+//                 const res = await api.get(`/income/${id}`);
+//                 const data = res.data.data;
+
+//                 setOriginalData(data);
+//                 setForm({
+//                     tanggal_proyek: data?.tanggal_proyek?.slice(0, 10) || "",
+//                     nama_proyek: data?.nama_proyek || "",
+//                     jumlah_pemasukan: data?.jumlah_pemasukan || "",
+//                 });
+//             } catch (error) {
+//                 setAlert({
+//                     message: error.response?.data?.message || "Gagal mengambil detail pemasukan",
+//                     type: "error",
+//                 });
+//             }
+//         };
+
+//         fetchDetail();
+//     }, [id]);
+
+//     const handleChange = (e) => {
+//         setForm({ ...form, [e.target.name]: e.target.value });
+//     };
+
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+
+//         if (!form.tanggal_proyek || !form.nama_proyek || form.jumlah_pemasukan === "") {
+//             setAlert({
+//                 message: "tanggal_proyek, nama_proyek, dan jumlah_pemasukan wajib diisi",
+//                 type: "error",
+//             });
+//             return;
+//         }
+
+//         try {
+//             const res = await api.put(`/income/${id}`, form);
+
+//             navigate("/income", {
+//                 state: {
+//                     message: res.data.message || "Pemasukan berhasil diubah",
+//                     type: "success",
+//                 },
+//             });
+//         } catch (error) {
+//             setAlert({
+//                 message: error.response?.data?.message || "Gagal mengubah pemasukan",
+//                 type: "error",
+//             });
+//         }
+//     };
+
+//     return (
+//         <div className="page">
+//             <div className="card form-card">
+//                 <h2>Edit Data Pemasukan</h2>
+
+//                 <AlertBox
+//                     message={alert.message}
+//                     type={alert.type}
+//                     onClose={() => setAlert({ message: "", type: "success" })}
+//                 />
+
+//                 {originalData && (
+//                     <div className="preview-box">
+//                         <h4>Data Lama</h4>
+//                         <p><strong>Tanggal Proyek:</strong> {formatTanggalIndonesia(originalData.tanggal_proyek)}</p>
+//                         <p><strong>Nama Proyek:</strong> {originalData.nama_proyek}</p>
+//                         <p><strong>Jumlah Pemasukan:</strong> {Number(originalData.jumlah_pemasukan).toLocaleString("id-ID")}</p>
+//                     </div>
+//                 )}
+
+//                 <form onSubmit={handleSubmit} className="form-grid">
+//                     <label>
+//                         Tanggal Proyek
+//                         <input
+//                             type="date"
+//                             name="tanggal_proyek"
+//                             value={form.tanggal_proyek}
+//                             onChange={handleChange}
+//                         />
+//                     </label>
+
+//                     <label>
+//                         Nama Proyek
+//                         <input
+//                             type="text"
+//                             name="nama_proyek"
+//                             value={form.nama_proyek}
+//                             onChange={handleChange}
+//                         />
+//                     </label>
+
+//                     <label>
+//                         Jumlah Pemasukan
+//                         <input
+//                             type="number"
+//                             name="jumlah_pemasukan"
+//                             value={form.jumlah_pemasukan}
+//                             onChange={handleChange}
+//                         />
+//                     </label>
+
+//                     <div className="form-actions">
+//                         <button type="submit">Update</button>
+//                         <button
+//                             type="button"
+//                             className="btn-secondary"
+//                             onClick={() => navigate("/income")}
+//                         >
+//                             Batal
+//                         </button>
+//                     </div>
+//                 </form>
+//             </div>
+//         </div>
+//     );
+// }
+
+// export default IncomeEditPage;
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    InputAdornment,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
+import AppIcon from "../components/AppIcon";
 import api from "../services/api";
 import AlertBox from "../components/AlertBox";
-import { formatTanggalIndonesia } from "../utils/formatDate";
 
 function IncomeEditPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-
-    const [originalData, setOriginalData] = useState(null);
     const [form, setForm] = useState({
         tanggal_proyek: "",
         nama_proyek: "",
         jumlah_pemasukan: "",
     });
-
-    const [alert, setAlert] = useState({
-        message: "",
-        type: "success",
-    });
+    const [alert, setAlert] = useState({ message: "", type: "success" });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
             try {
                 const res = await api.get(`/income/${id}`);
                 const data = res.data.data;
-
-                setOriginalData(data);
                 setForm({
                     tanggal_proyek: data?.tanggal_proyek?.slice(0, 10) || "",
                     nama_proyek: data?.nama_proyek || "",
-                    jumlah_pemasukan: data?.jumlah_pemasukan || "",
+                    jumlah_pemasukan: data?.jumlah_pemasukan ?? "",
                 });
             } catch (error) {
                 setAlert({
                     message: error.response?.data?.message || "Gagal mengambil detail pemasukan",
                     type: "error",
                 });
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -44,22 +197,23 @@ function IncomeEditPage() {
     }, [id]);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!form.tanggal_proyek || !form.nama_proyek || form.jumlah_pemasukan === "") {
-            setAlert({
-                message: "tanggal_proyek, nama_proyek, dan jumlah_pemasukan wajib diisi",
-                type: "error",
-            });
+            setAlert({ message: "Semua field wajib diisi.", type: "error" });
             return;
         }
 
         try {
-            const res = await api.put(`/income/${id}`, form);
+            setSaving(true);
+            const res = await api.put(`/income/${id}`, {
+                ...form,
+                jumlah_pemasukan: Number(form.jumlah_pemasukan),
+            });
 
             navigate("/income", {
                 state: {
@@ -72,73 +226,86 @@ function IncomeEditPage() {
                 message: error.response?.data?.message || "Gagal mengubah pemasukan",
                 type: "error",
             });
+        } finally {
+            setSaving(false);
         }
     };
 
     return (
-        <div className="page">
-            <div className="card form-card">
-                <h2>Edit Data Pemasukan</h2>
+        <Box className="page-container form-page">
+            <Box className="form-page-inner">
+                <Button
+                    startIcon={<AppIcon name="back" />}
+                    onClick={() => navigate("/income")}
+                    className="back-button"
+                >
+                    Kembali
+                </Button>
 
-                <AlertBox
-                    message={alert.message}
-                    type={alert.type}
-                    onClose={() => setAlert({ message: "", type: "success" })}
-                />
+                <Card className="form-card-mui">
+                    <CardContent className="form-card-content">
+                        <Typography variant="h5" className="form-title">Edit Pemasukan</Typography>
+                        <Typography className="form-subtitle">Perbarui data pemasukan proyek.</Typography>
 
-                {originalData && (
-                    <div className="preview-box">
-                        <h4>Data Lama</h4>
-                        <p><strong>Tanggal Proyek:</strong> {formatTanggalIndonesia(originalData.tanggal_proyek)}</p>
-                        <p><strong>Nama Proyek:</strong> {originalData.nama_proyek}</p>
-                        <p><strong>Jumlah Pemasukan:</strong> {Number(originalData.jumlah_pemasukan).toLocaleString("id-ID")}</p>
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="form-grid">
-                    <label>
-                        Tanggal Proyek
-                        <input
-                            type="date"
-                            name="tanggal_proyek"
-                            value={form.tanggal_proyek}
-                            onChange={handleChange}
+                        <AlertBox
+                            message={alert.message}
+                            type={alert.type}
+                            onClose={() => setAlert({ message: "", type: "success" })}
                         />
-                    </label>
 
-                    <label>
-                        Nama Proyek
-                        <input
-                            type="text"
-                            name="nama_proyek"
-                            value={form.nama_proyek}
-                            onChange={handleChange}
-                        />
-                    </label>
+                        {loading ? (
+                            <Box className="loading-state form-loading-state">
+                                <CircularProgress />
+                            </Box>
+                        ) : (
+                            <Stack component="form" onSubmit={handleSubmit} className="mui-form-stack">
+                                <TextField
+                                    fullWidth
+                                    type="date"
+                                    name="tanggal_proyek"
+                                    label="Tanggal Proyek"
+                                    value={form.tanggal_proyek}
+                                    onChange={handleChange}
+                                    InputLabelProps={{ shrink: true }}
+                                />
 
-                    <label>
-                        Jumlah Pemasukan
-                        <input
-                            type="number"
-                            name="jumlah_pemasukan"
-                            value={form.jumlah_pemasukan}
-                            onChange={handleChange}
-                        />
-                    </label>
+                                <TextField
+                                    fullWidth
+                                    name="nama_proyek"
+                                    label="Nama Proyek"
+                                    value={form.nama_proyek}
+                                    onChange={handleChange}
+                                />
 
-                    <div className="form-actions">
-                        <button type="submit">Update</button>
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => navigate("/income")}
-                        >
-                            Batal
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                                <TextField
+                                    fullWidth
+                                    type="number"
+                                    name="jumlah_pemasukan"
+                                    label="Jumlah Pemasukan"
+                                    value={form.jumlah_pemasukan}
+                                    onChange={handleChange}
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
+                                    }}
+                                />
+
+                                <Box className="form-action-row">
+                                    <Button variant="outlined" onClick={() => navigate("/income")}>Batal</Button>
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        startIcon={<AppIcon name="save" />}
+                                        disabled={saving}
+                                    >
+                                        {saving ? "Menyimpan..." : "Simpan Perubahan"}
+                                    </Button>
+                                </Box>
+                            </Stack>
+                        )}
+                    </CardContent>
+                </Card>
+            </Box>
+        </Box>
     );
 }
 
