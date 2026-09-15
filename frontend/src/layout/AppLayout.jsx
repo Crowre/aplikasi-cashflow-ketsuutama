@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
     AppBar,
@@ -130,7 +130,9 @@ function AppLayout() {
             </Box>
 
             <main className="app-main">
-                <Outlet />
+                <Suspense fallback={<p role="status">Memuat halaman...</p>}>
+                    <Outlet />
+                </Suspense>
             </main>
         </Box>
     );
