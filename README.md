@@ -22,7 +22,7 @@ Frontend: `http://localhost:5173`. Backend: `http://localhost:3000`.
 
 ## Persiapan deployment
 
-Deploy sebagai dua layanan: backend Node.js dan frontend static hosting, ditambah PostgreSQL. Platform hosting belum ditentukan.
+Panduan khusus Railway dan pemindahan database melalui DBeaver tersedia di [DEPLOYMENT.md](DEPLOYMENT.md). Repository menyediakan Dockerfile dan railway.json untuk kedua layanan.
 
 | Pengaturan | Backend | Frontend |
 | --- | --- | --- |
