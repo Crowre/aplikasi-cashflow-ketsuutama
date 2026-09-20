@@ -4,12 +4,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const dbConfig = {
+    ...(process.env.DATABASE_URL ? { connectionString: process.env.DATABASE_URL } : {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
-    max: 20
+    }),
+    max: 20,
+    connectionTimeoutMillis: 10000
 }
 
 const pool = new Pool(dbConfig);
@@ -17,7 +20,6 @@ const pool = new Pool(dbConfig);
 pool.connect()
     .then(client => {
         console.log('Database connected successfully');
-        console.log('DB Config:', dbConfig);
         client.release();
     })
     .catch(err => {

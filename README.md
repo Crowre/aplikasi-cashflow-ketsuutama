@@ -1,181 +1,88 @@
-# Aplikasi Cashflow Ketsuutama
+﻿# Aplikasi Cashflow Ketsuutama
 
-Repository ini adalah monorepo yang menggabungkan project **backend** dan **frontend** aplikasi keuangan dalam satu repository GitHub. Struktur seperti ini umum dipakai untuk aplikasi full-stack karena memudahkan pengelolaan source code, dependency, dan workflow pengembangan dalam satu tempat.
+Aplikasi pengelolaan pemasukan dan pengeluaran menggunakan React/Vite, Express, PostgreSQL, dan autentikasi JWT.
 
-## Struktur Project
+## Struktur
 
-Project ini dipisahkan menjadi dua folder utama agar backend dan frontend tetap rapi dan mudah dikelola.
+- `backend/src/`: API dan koneksi database.
+- `backend/scripts/build.js`: pemeriksaan sintaks dan pembuatan `backend/dist/`.
+- `frontend/src/`: aplikasi React.
+- `frontend/dist/`: hasil build website.
 
-```bash
-aplikasi-keuangan/
-├── backend/
-│   ├── app.js
-│   ├── controller/
-│   ├── middleware/
-│   ├── model/
-│   ├── router/
-│   ├── service/
-│   ├── utils/
-│   ├── package.json
-│   └── .env
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   ├── vite.config.js
-│   └── .env
-├── package.json
-├── .gitignore
-└── README.md
-```
+Dependency dikelola terpisah di backend dan frontend. Tidak ada instalasi npm di root repository.
 
-## Teknologi
+## Pengembangan lokal
 
-Project ini memakai React dengan Vite di sisi frontend dan Express.js di sisi backend, yang merupakan kombinasi umum untuk monorepo full-stack JavaScript.
+1. Jalankan `npm ci` di masing-masing folder `backend` dan `frontend`.
+2. Salin `.env.example` menjadi `.env` pada masing-masing folder dan isi konfigurasi lokal.
+3. Siapkan PostgreSQL beserta schema dan data referensi dari database aplikasi yang sudah digunakan.
+4. Jalankan `npm run dev` di backend dan frontend menggunakan dua terminal.
 
-### Backend
-- Node.js
-- Express.js
-- PostgreSQL
-- JWT Authentication
-- bcryptjs
+Frontend: `http://localhost:5173`. Backend: `http://localhost:3000`.
 
-### Frontend
-- React
-- Vite
-- React Router DOM
-- Axios
-- CSS custom
+## Persiapan deployment
 
-## Instalasi
+Deploy sebagai dua layanan: backend Node.js dan frontend static hosting, ditambah PostgreSQL. Platform hosting belum ditentukan.
 
-Pastikan Node.js dan npm sudah terpasang di komputer sebelum menjalankan project ini.
+| Pengaturan | Backend | Frontend |
+| --- | --- | --- |
+| Root directory | `backend` | `frontend` |
+| Install | `npm ci` | `npm ci` |
+| Build | `npm run build` | `npm run build` |
+| Start | `npm run start:prod` | Sajikan folder `dist` melalui static hosting |
+| Health check | `/health` | `/` |
 
-### 1. Clone repository
-```bash
-git clone https://github.com/Crowre/aplikasi-cashflow-ketsuutama.git
-cd aplikasi-cashflow-ketsuutama
-```
+Gunakan versi Node yang memenuhi engines dependency dalam package-lock.json. Build frontend membutuhkan devDependencies; jangan menghilangkannya pada tahap build. `vite preview` hanya untuk memeriksa hasil build lokal.
 
-### 2. Install dependency root
-Root `package.json` dapat dipakai untuk membantu menjalankan frontend dan backend dari satu repository.
+### Environment backend
 
-```bash
-npm install
-```
+Atur di dashboard hosting:
 
-### 3. Install dependency backend
-```bash
-cd backend
-npm install
-```
+- `NODE_ENV=production`
+- `JWT_SECRET`: secret acak yang kuat dan khusus production. Bisa dibuat dengan `node -e "console.log(require('node:crypto').randomBytes(48).toString('hex'))"`.
+- `CORS_ORIGIN=https://domain-frontend`: origin tanpa slash terakhir; pisahkan dengan koma jika ada beberapa origin.
+- `DATABASE_URL`: connection string PostgreSQL dari provider, termasuk pengaturan TLS/SSL sesuai provider. Alternatif: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+- `PORT`: gunakan nilai yang diberikan hosting; default aplikasi adalah `3000`.
 
-### 4. Install dependency frontend
-```bash
-cd ../frontend
-npm install
-```
+Backend mendahulukan `DATABASE_URL` jika terisi. Jangan memasukkan credential production ke repository.
 
-## Konfigurasi Environment
+### Environment frontend
 
-Buat file `.env` pada folder backend dan frontend sesuai kebutuhan project.
+Atur `VITE_API_URL=https://domain-backend` **sebelum build**. Perubahan URL memerlukan build ulang. Variabel `VITE_*` dimasukkan ke bundle publik, jadi jangan menyimpan secret di dalamnya.
 
-### Backend `.env`
-```env
-PORT=3000
-JWT_SECRET=isi_dengan_secret_kamu
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password_kamu
-DB_NAME=nama_database
-```
+Aktifkan SPA fallback/rewrite pada hosting: permintaan halaman seperti `/dashboard` dan `/income/edit/1` harus mengembalikan `/index.html` ketika file statis tidak ditemukan. Bentuk konfigurasinya mengikuti platform hosting.
 
-### Frontend `.env`
-```env
-VITE_API_URL=http://localhost:3000
-```
+### Database
 
-## Menjalankan Project
+Repository belum menyediakan migration SQL atau seed. Sebelum deployment, ekspor schema dari database sumber yang sudah bekerja dan restore ke database production. Pastikan tabel berikut beserta constraint, sequence, dan data referensinya tersedia:
 
-### Menjalankan backend
-```bash
-cd backend
-npm run dev
-```
+- `users`
+- `pemasukan`
+- `pengeluaran`
+- `kabupaten_kota_sumbar` (termasuk data lokasi)
 
-Backend akan berjalan di `http://localhost:3000` bila konfigurasi port mengikuti file server saat ini.
+Gunakan backup/restore PostgreSQL sesuai versi database sumber dan tujuan. Jangan melakukan restore di database berisi data penting tanpa backup dan pemeriksaan terlebih dahulu.
 
-### Menjalankan frontend
-```bash
-cd frontend
-npm run dev
-```
+### Pemeriksaan sebelum rilis
 
-Frontend biasanya akan berjalan di port bawaan Vite, misalnya `http://localhost:5173`.
+- Build backend dan frontend berhasil.
+- Database production sudah memiliki schema dan data lokasi.
+- `GET /health` mengembalikan 200. Endpoint ini hanya memeriksa proses API, bukan koneksi database.
+- Registrasi/login dan operasi pemasukan/pengeluaran berhasil pada environment staging.
+- Halaman bersarang dapat di-refresh tanpa 404.
+- Frontend menggunakan API HTTPS production, bukan localhost.
+- Tentukan apakah registrasi publik memang diizinkan: endpoint `/auth/registration` saat ini terbuka.
+- `frontend/.env` sebelumnya terlacak Git. Penambahan `.gitignore` tidak menghapus file yang sudah terlacak; sebelum commit deployment, jalankan `git rm --cached frontend/.env` agar file lokal tetap ada tetapi tidak disimpan pada commit berikutnya. Gunakan `.env.example` sebagai template.
 
-### Menjalankan dari root repository
-Jika root project sudah memakai script gabungan, frontend dan backend bisa dijalankan dari root repository dengan satu perintah.
+## API
 
-```bash
-npm run dev
-```
+- `POST /auth/registration`
+- `POST /auth/login`
+- `GET /health`
+- `GET`, `POST` `/income`
+- `GET`, `PUT`, `DELETE` `/income/:id`
+- `GET`, `POST` `/outcome`
+- `GET /outcome/lokasi`
+- `GET`, `PUT`, `DELETE` `/outcome/:id`
 
-## Fitur Utama
-
-### Backend
-- Registrasi user
-- Login user dengan JWT
-- CRUD data pemasukan
-- CRUD data pengeluaran
-- Endpoint data lokasi Sumatera Barat
-- Validasi request dan error handling
-
-### Frontend
-- Login dan registrasi user
-- Halaman data pemasukan
-- Halaman data pengeluaran
-- Alert box untuk notifikasi aksi
-- Confirm dialog untuk hapus data
-- Tampilan mobile dan desktop
-- Sorting data ascending berdasarkan tanggal
-
-## Endpoint API
-
-Backend saat ini menyediakan route utama `/auth`, `/income`, dan `/outcome`.
-
-| Method | Endpoint | Keterangan |
-|--------|----------|------------|
-| POST | `/auth/registration` | Registrasi user  |
-| POST | `/auth/login` | Login user  |
-| GET | `/income` | Ambil semua data pemasukan   |
-| GET | `/income/:id` | Ambil detail pemasukan   |
-| POST | `/income` | Tambah data pemasukan  |
-| PUT | `/income/:id` | Update data pemasukan  |
-| DELETE | `/income/:id` | Hapus data pemasukan  |
-| GET | `/outcome` | Ambil semua data pengeluaran  |
-| GET | `/outcome/lokasi` | Ambil data lokasi Sumatera Barat  |
-| GET | `/outcome/:id` | Ambil detail pengeluaran  |
-| POST | `/outcome` | Tambah data pengeluaran  |
-| PUT | `/outcome/:id` | Update data pengeluaran  |
-| DELETE | `/outcome/:id` | Hapus data pengeluaran  |
-
-## Catatan Pengembangan
-
-Menggabungkan frontend dan backend dalam satu repository memudahkan sinkronisasi perubahan antarlayer, terutama saat endpoint backend dan konsumsi API frontend berkembang bersama.[2] Struktur monorepo seperti ini juga memudahkan dokumentasi, setup lokal, dan deployment dibanding memisahkan repository terlalu dini.
-
-## Git Workflow
-
-Contoh alur dasar setelah project berada dalam satu repository:
-
-```bash
-git add .
-git commit -m "Update frontend and backend"
-git push origin main
-```
-
-Jika menggunakan SSH dan muncul error `Permission denied (publickey)`, berarti autentikasi SSH key ke GitHub belum berhasil dan remote bisa sementara diganti ke HTTPS atau SSH key perlu dikonfigurasi dengan benar.
-
-## Lisensi
-
-Project ini dapat disesuaikan dengan kebutuhan pribadi, tugas, atau pengembangan internal.
+Referensi: [Environment Vite](https://vite.dev/guide/env-and-mode), [Build Vite](https://vite.dev/guide/build), [Koneksi node-postgres](https://node-postgres.com/features/connecting).

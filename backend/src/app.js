@@ -14,10 +14,18 @@ if (!process.env.JWT_SECRET) {
 }
 
 const app = express();
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGIN) {
+  throw new Error("CORS_ORIGIN wajib diisi untuk production");
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 
 app.get("/health", (req, res) => {
   return res.status(200).json({
